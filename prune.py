@@ -10,9 +10,10 @@ from os.path import join
 import json
 
 from mythop import clever_format, profile
-
+print(torch.cuda.is_available())
 os.environ['CUDA_VISIBLE_DEVICES'] = '1'
-
+torch.cuda.current_device()
+torch.cuda._initialized = True
 parser = argparse.ArgumentParser(description='Mobilev2 Pruner')
 parser.add_argument('--dataset', type=str, default='cifar10',
                     help='training dataset (default: cifar100)')
@@ -20,8 +21,8 @@ parser.add_argument('--batch-size', type=int, default=128, metavar='N',
                     help='input batch size for training (default: 64)')
 parser.add_argument('--test-batch-size', type=int, default=256, metavar='N',
                     help='input batch size for testing (default: 256)')
-parser.add_argument('--epochs', type=int, default=160, metavar='N',
-                    help='number of epochs to train (default: 160)')
+parser.add_argument('--epochs', type=int, default=30, metavar='N',
+                    help='number of epochs to train (default: 40)')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
 parser.add_argument('--finetunelr', type=float, default=0.01, metavar='LR',
@@ -41,7 +42,7 @@ parser.add_argument('--save', default='checkpoints', type=str, metavar='PATH',
 parser.add_argument('--arch', default='MobileNetV2', type=str, choices=['USMobileNetV2', 'MobileNetV2','VGG',
                                                                         'ShuffleNetV2','resnet50'],
                     help='architecture to use')
-parser.add_argument('--pruner', default='SlimmingPruner', type=str,
+parser.add_argument('--pruner', default='AutoSlimPruner', type=str,
                     choices=['AutoSlimPruner', 'SlimmingPruner', 'l1normPruner'],
                     help='architecture to use')
 parser.add_argument('--pruneratio', default=0.4, type=float,
@@ -53,9 +54,9 @@ args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 savepath = os.path.join(args.save, args.arch, 'sr' if args.sr else 'nosr')
 args.savepath = savepath
-kwargs = {'num_workers': 4, 'pin_memory': True} if args.cuda else {}
+kwargs = {'num_workers': 0, 'pin_memory': True} if args.cuda else {}
 train_loader = torch.utils.data.DataLoader(
-    datasets.CIFAR10('data.cifar10', train=True, download=True,
+    datasets.CIFAR10('D:/dataSet', train=True, download=True,
                      transform=transforms.Compose([
                          transforms.RandomCrop(32, padding=4),
                          transforms.RandomHorizontalFlip(),
@@ -64,7 +65,7 @@ train_loader = torch.utils.data.DataLoader(
                      ])),
     batch_size=args.batch_size, shuffle=True, **kwargs)
 test_loader = torch.utils.data.DataLoader(
-    datasets.CIFAR10('data.cifar10', train=False, transform=transforms.Compose([
+    datasets.CIFAR10('D:/dataSet', train=False, transform=transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
     ])),

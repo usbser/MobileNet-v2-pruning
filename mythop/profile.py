@@ -3,6 +3,8 @@ import logging
 import torch
 import torch.nn as nn
 from torch.nn.modules.conv import _ConvNd
+from thop import clever_format
+from thop import profile
 
 from .count_hooks import *
 

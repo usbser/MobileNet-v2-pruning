@@ -47,22 +47,28 @@ class AutoSlimPruner(BasePruner):
         while(1):
             prune_results = []
             for idx, b in enumerate(self.blocks):
-                if (block_channels[idx] == None or (block_channels[idx]['numch'] - self.prunestep)<=0):
+                if (block_channels[idx] == None or (block_channels[idx]['numch'] - self.prunestep)<=0): #判断该层是否可以剪枝
                     prune_results.append(-1)
                     continue
-                b.prunemask = torch.arange(0, block_channels[idx]['numch'] - self.prunestep).cuda()
+                b.prunemask = torch.arange(0, block_channels[idx]['numch'] - self.prunestep).cuda()  #为当前层创建剪裁后的mask
                 assert b.prunemask.shape[0]>0
-                self.clone_model()
+                self.clone_model()    #将参数复制到newmodel里
+                #在进行子网推理之前，网络中所有的Batch Normalization的需要在训练集的子集上重新计算。
+                #这是因为supernet中由BN计算的数值往往不能应用于候选网络中。这部分操作被称为BN校正。
+                self.newmodel.apply(bn_calibration_init) #BN校正
+
+                block_channels[idx]['numch'] -= self.prunestep
                 flops, params = self.get_flops(self.newmodel)
                 block_channels[idx]['flops'] = flops
                 block_channels[idx]['params'] = params
-                self.newmodel.apply(bn_calibration_init)
                 accpruned = self.test(newmodel=True, cal_bn=True)
+                block_channels[idx]['numch'] += self.prunestep
+
                 print("flops:{}  params:{} acc:{}".format(flops,params,accpruned))
                 prune_results.append(accpruned)
                 # reset prunemask
                 b.prunemask = torch.arange(0, block_channels[idx]['numch']).cuda()
-                break
+                #break  #todo
             pick_idx=prune_results.index(max(prune_results))
             if block_channels[pick_idx]['flops']<self.constrain:
                 break
@@ -92,6 +98,7 @@ class AutoSlimPruner(BasePruner):
         for epoch in range(self.args.start_epoch, self.args.epochs):
             self.train()
             prec1 = self.test()
+            break
             scheduler.step(epoch)
             lr_current = self.optimizer.param_groups[0]['lr']
             print("epoch {} currnt lr:{},acc:{}".format(epoch, lr_current,prec1))

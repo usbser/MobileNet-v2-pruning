@@ -157,14 +157,11 @@ class USBatchNorm2d(nn.BatchNorm2d):
             num_features, affine=True, track_running_stats=False)
         self.num_features_max = num_features
         # for tracking performance during training
-        self.bn = nn.ModuleList(
-            [nn.BatchNorm2d(i, affine=False)
-             for i in [
-                     make_divisible(
-                         self.num_features_max * width_mult / ratio) * ratio
-                     for width_mult in FLAGS.width_mult_list]
-             ]
-        )
+        self.bn = nn.ModuleList([
+            nn.BatchNorm2d(i, affine=False) for i in [
+                 make_divisible(
+                     self.num_features_max * width_mult / ratio) * ratio
+                 for width_mult in FLAGS.width_mult_list] ]  )
         self.ratio = ratio
         self.width_mult = None
         self.ignore_model_profiling = True
@@ -197,11 +194,13 @@ class USBatchNorm2d(nn.BatchNorm2d):
                 self.momentum,
                 self.eps)
         return y
+
+
 def pop_channels(autoslim_channels):
     return [i.pop(0) for i in autoslim_channels]
 
 
-def bn_calibration_init(m):
+def bn_calibration_init(m):   #BN校正  supernet中由BN计算的数值往往不能应用于候选网络中 ,在进行子网推理之前，网络中所有的Batch Normalization的需要在训练集的子集上重新计算
     """ calculating post-statistics of batch normalization """
     if getattr(m, 'track_running_stats', False):
         # reset all values for post-statistics

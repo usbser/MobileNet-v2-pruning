@@ -40,7 +40,7 @@ parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
 parser.add_argument('--save', default='checkpoints', type=str, metavar='PATH',
                     help='path to save prune model (default: current directory)')
-parser.add_argument('--arch', default='USMobileNetV2', type=str,choices=['MobileNetV2','USMobileNetV2', 'VGG',
+parser.add_argument('--arch', default='MobileNetV2', type=str,choices=['MobileNetV2','USMobileNetV2', 'VGG',
                                                                          'ShuffleNetV2','resnet50'],
                     help='architecture to use')
 parser.add_argument('--sr', dest='sr', action='store_true',
@@ -60,10 +60,10 @@ if args.cuda:
 savepath = os.path.join(args.save, args.arch, 'sr' if args.sr else 'nosr')
 if not os.path.exists(savepath):
     os.makedirs(savepath)
-kwargs = {'num_workers': 4, 'pin_memory': True} if args.cuda else {}
+kwargs = {'num_workers': 0, 'pin_memory': True} if args.cuda else {}
 if args.dataset == 'cifar10':
     train_loader = torch.utils.data.DataLoader(
-        datasets.CIFAR10('data.cifar10', train=True, download=True,
+        datasets.CIFAR10(root='D:/dataSet', train=True, download=True,
                          transform=transforms.Compose([
                              transforms.RandomCrop(32, padding=4),
                              transforms.RandomHorizontalFlip(),
@@ -72,7 +72,7 @@ if args.dataset == 'cifar10':
                          ])),
         batch_size=args.batch_size, shuffle=True, **kwargs)
     test_loader = torch.utils.data.DataLoader(
-        datasets.CIFAR10('data.cifar10', train=False, transform=transforms.Compose([
+        datasets.CIFAR10(root='D:/dataSet', train=False, transform=transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
         ])),
@@ -100,6 +100,8 @@ if args.cuda:
     model.cuda()
 best_prec1 = -1
 optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+
+#使用checkpoint继续训练
 if args.resume:
     if os.path.isfile(args.resume):
         print("=> loading checkpoint '{}'".format(args.resume))
@@ -215,6 +217,7 @@ def export2normal():
 
 best_prec1 = 0. if best_prec1 == -1 else best_prec1
 scheduler=optim.lr_scheduler.CosineAnnealingLR(optimizer,T_max=args.epochs,eta_min=0)
+
 if args.test:
     if args.arch=='USMobileNetV2':
         export2normal()
@@ -233,7 +236,7 @@ else:
         else:
             train()
             prec1 = test(epoch=epoch)
-        scheduler.step(epoch)
+        scheduler.step(epoch)   #根据 epoch 的数量调整学习率
         lr_current = optimizer.param_groups[0]['lr']
         print("currnt lr:{}".format(lr_current))
         is_best = prec1 > best_prec1

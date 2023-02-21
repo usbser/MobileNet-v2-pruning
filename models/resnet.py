@@ -2,8 +2,8 @@ import logging
 import torch
 import torch.nn as nn
 import torch.utils.checkpoint as cp
-from mmcv.cnn import constant_init, kaiming_init
-from mmcv.runner import load_checkpoint
+# from mmcv.cnn import constant_init, kaiming_init
+# from mmcv.runner import load_checkpoint
 from collections import OrderedDict
 import math
 from models.baseblock import *
