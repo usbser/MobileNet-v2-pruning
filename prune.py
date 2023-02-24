@@ -92,7 +92,7 @@ if args.pruner == 'l1normPruner':
 elif args.pruner == 'SlimmingPruner':
     kwargs = {'pruneratio': args.pruneratio}
 elif args.pruner == 'AutoSlimPruner':
-    kwargs = {'prunestep': 16, 'constrain': 200e6}
+    kwargs = {'prunestep': 32, 'constrain': 200e6}
 
 pruner = pruner.__dict__[args.pruner](model=model, newmodel=newmodel, testset=test_loader, trainset=train_loader,
                                       optimizer=optimizer, args=args, **kwargs)

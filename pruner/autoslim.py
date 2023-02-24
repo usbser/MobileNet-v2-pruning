@@ -64,7 +64,7 @@ class AutoSlimPruner(BasePruner):
                 accpruned = self.test(newmodel=True, cal_bn=True)
                 block_channels[idx]['numch'] += self.prunestep
 
-                print("flops:{}  params:{} acc:{}".format(flops,params,accpruned))
+                #print("flops:{}  params:{} acc:{}".format(flops,params,accpruned))
                 prune_results.append(accpruned)
                 # reset prunemask
                 b.prunemask = torch.arange(0, block_channels[idx]['numch']).cuda()

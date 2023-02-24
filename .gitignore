@@ -11,3 +11,5 @@ logs/
 *.zip
 *.ipynb
 /.vscode
+*.tar
+*.pth
